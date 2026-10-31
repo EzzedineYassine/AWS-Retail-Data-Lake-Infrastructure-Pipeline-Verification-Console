@@ -1,0 +1,15 @@
+project_name                   = "retail-datalake"
+environment                    = "dev"
+aws_region                     = "us-east-1"
+aws_account_id                 = "123456789012"
+raw_prefix                     = "raw/transactions/"
+curated_prefix                 = "curated/transactions/"
+quarantine_prefix              = "quarantine/transactions/"
+athena_results_prefix          = "athena-results/"
+lambda_memory_size_mb          = 256
+lambda_timeout_seconds         = 60
+lambda_reserved_concurrency    = 10
+athena_bytes_scanned_cutoff    = 10737418240
+log_retention_days             = 30
+quarantine_row_alarm_threshold = 10
+alert_email                    = ""

@@ -1,0 +1,3 @@
+transaction_id,transaction_timestamp,store_id,customer_id,product_sku,category,quantity,discount_amount
+TXN-20261030001,2026-10-30T09:00:00Z,STORE-001,CUST-1001A,SKU-ELEC-100,Electronics,1,0.00
+TXN-20261030002,2026-10-30T09:15:00Z,STORE-002,CUST-1002B,SKU-APPR-200,Apparel,2,5.00

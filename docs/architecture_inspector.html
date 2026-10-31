@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AWS Retail Data Lake — Architecture &amp; Pipeline Verification Console</title>
+<style>
+:root {
+  --bg-page: #f8fafc;
+  --bg-surface: #ffffff;
+  --navy-900: #0f1b2a;
+  --navy-800: #16253b;
+  --slate-700: #334155;
+  --slate-500: #64748b;
+  --slate-200: #e2e8f0;
+  --aws-orange: #ec7211;
+  --status-ok: #15803d;
+  --status-warn: #b45309;
+  --status-err: #b91c1c;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--bg-page);
+  color: var(--navy-900);
+  line-height: 1.5;
+}
+header {
+  background-color: var(--navy-900);
+  color: #ffffff;
+  border-bottom: 3px solid var(--aws-orange);
+  padding: 1.25rem 2rem;
+}
+.header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.header-title h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.header-title p {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  margin-top: 0.2rem;
+}
+.status-pill {
+  background: var(--navy-800);
+  border: 1px solid #334155;
+  padding: 0.4rem 0.85rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #f8fafc;
+}
+main {
+  max-width: 1280px;
+  margin: 1.75rem auto;
+  padding: 0 2rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+.kpi-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--slate-200);
+  border-top: 3px solid var(--navy-900);
+  border-radius: 4px;
+  padding: 1rem 1.25rem;
+}
+.kpi-card.accent {
+  border-top-color: var(--aws-orange);
+}
+.kpi-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--slate-500);
+  font-weight: 600;
+}
+.kpi-value {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--navy-900);
+  margin-top: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-sub {
+  font-size: 0.8rem;
+  color: var(--slate-700);
+  margin-top: 0.2rem;
+}
+.panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--slate-200);
+  border-radius: 4px;
+  padding: 1.25rem 1.5rem;
+}
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--slate-200);
+}
+.panel-header h2, .panel-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--navy-900);
+}
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badge-navy { background: var(--navy-900); color: #ffffff; }
+.badge-orange { background: var(--aws-orange); color: #ffffff; }
+.badge-warn { background: #fef3c7; color: var(--status-warn); border: 1px solid #fde68a; }
+.arch-flow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem;
+}
+.arch-node {
+  border: 1px solid var(--slate-200);
+  border-left: 3px solid var(--aws-orange);
+  padding: 0.85rem;
+  border-radius: 3px;
+  background: #fcfcfd;
+}
+.arch-node h4 {
+  font-size: 0.85rem;
+  color: var(--navy-900);
+  margin-bottom: 0.3rem;
+}
+.arch-node p {
+  font-size: 0.78rem;
+  color: var(--slate-700);
+}
+.table-wrap {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+th, td {
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--slate-200);
+}
+th {
+  background: #f1f5f9;
+  color: var(--navy-900);
+  font-weight: 600;
+  white-space: nowrap;
+}
+td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  background: #f1f5f9;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+}
+.s3-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 0.4rem;
+}
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+  gap: 1.25rem;
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="header-title">
+      <h1>AWS Retail Data Lake — Infrastructure &amp; Pipeline Verification Console</h1>
+      <p>Terraform IaC | Amazon S3 Zone Isolation | AWS Lambda Deterministic Validation | AWS Glue Catalog | Amazon Athena SQL</p>
+    </div>
+    <div class="status-pill">Bucket: retail-datalake-dev-123456789012</div>
+  </div>
+</header>
+<main>
+  <section class="kpi-strip">
+    <div class="kpi-card accent">
+      <div class="kpi-label">Validated Curated Rows</div>
+      <div class="kpi-value">20</div>
+      <div class="kpi-sub">Partitioned across 3 Hive dates</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Quarantined Defective Rows</div>
+      <div class="kpi-value">6</div>
+      <div class="kpi-sub">Isolated with deterministic error codes</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Schema Failure Guard</div>
+      <div class="kpi-value">Verified</div>
+      <div class="kpi-sub">Missing columns blocked &amp; logged</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Recursive Trigger Guard</div>
+      <div class="kpi-value">Enforced</div>
+      <div class="kpi-sub">S3 filter + handler prefix guard</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header">
+      <span class="badge badge-orange">Architecture</span>
+      <h2>End-to-End Event-Driven Data Flow</h2>
+    </div>
+    <div class="arch-flow">
+      <div class="arch-node">
+        <h4>1. Raw S3 Ingestion Zone</h4>
+        <p>Incoming POS CSV files land in <code>raw/transactions/</code> with SSE-S3 encryption, Versioning, Public Access Block, and TLS-only bucket policy.</p>
+      </div>
+      <div class="arch-node">
+        <h4>2. S3 Prefix Notification</h4>
+        <p>Filtered strictly on <code>raw/transactions/*.csv</code> so writes to <code>curated/</code> or <code>quarantine/</code> never re-trigger Lambda.</p>
+      </div>
+      <div class="arch-node">
+        <h4>3. Lambda Validation Engine</h4>
+        <p>Validates headers, types, store/SKU patterns, duplicate IDs, and discount bounds; computes <code>gross_amount</code> and <code>net_amount</code>.</p>
+      </div>
+      <div class="arch-node">
+        <h4>4. Curated &amp; Quarantine Zones</h4>
+        <p>Valid rows write to <code>curated/transactions/transaction_date=YYYY-MM-DD/</code>; bad rows write to <code>quarantine/transactions/</code>.</p>
+      </div>
+      <div class="arch-node">
+        <h4>5. Glue Catalog &amp; Athena</h4>
+        <p>Glue table uses Partition Projection for zero-latency SQL queries in a cost-governed Athena workgroup (10 GB scan cap).</p>
+      </div>
+      <div class="arch-node">
+        <h4>6. CloudWatch &amp; SNS Alarms</h4>
+        <p>Structured JSON logs feed metric filters for <code>QuarantinedRowCount</code>, <code>SchemaValidationFailures</code>, and Lambda invocation errors.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header">
+      <span class="badge badge-warn">Quarantine Diagnostics</span>
+      <h2>Deterministic Row-Level Rejection Report (Batch: retail_transactions_2026_10_29_mixed_f7d31a08bd)</h2>
+    </div>
+    <div class='table-wrap'><table><thead><tr><th>row_number</th><th>error_codes</th><th>transaction_id</th><th>store_id</th><th>diagnostic_detail</th></tr></thead><tbody><tr><td class='num'>4</td><td class=''>INVALID_QUANTITY</td><td class=''>TXN-20261029003</td><td class=''>STORE-001</td><td class=''>quantity &#x27;-3&#x27; must be a positive integer between 1 and 10000</td></tr><tr><td class='num'>5</td><td class=''>DISCOUNT_EXCEEDS_GROSS_AMOUNT</td><td class=''>TXN-20261029004</td><td class=''>STORE-003</td><td class=''>discount_amount (120.00) exceeds gross_amount (89.99)</td></tr><tr><td class='num'>6</td><td class=''>DUPLICATE_TRANSACTION_ID</td><td class=''>TXN-20261029001</td><td class=''>STORE-001</td><td class=''>Duplicate transaction_id &#x27;TXN-20261029001&#x27; encountered in same batch</td></tr><tr><td class='num'>8</td><td class=''>INVALID_TIMESTAMP</td><td class=''>TXN-20261029006</td><td class=''>STORE-002</td><td class=''>transaction_timestamp &#x27;2026-13-45T99:00:00Z&#x27; is not a valid ISO-8601 timestamp</td></tr><tr><td class='num'>10</td><td class=''>UNSUPPORTED_PAYMENT_METHOD, UNSUPPORTED_CURRENCY</td><td class=''>TXN-20261029008</td><td class=''>STORE-001</td><td class=''>payment_method &#x27;CRYPTO&#x27; is not in [&#x27;CARD&#x27;, &#x27;CASH&#x27;, &#x27;MOBILE_PAY&#x27;, &#x27;VOUCHER&#x27;]; currency &#x27;JPY&#x27; is not in [&#x27;EUR&#x27;, &#x27;GBP&#x27;, &#x27;USD&#x27;]</td></tr><tr><td class='num'>12</td><td class=''>INVALID_STORE_ID, INVALID_PRODUCT_SKU</td><td class=''>TXN-20261029010</td><td class=''>BRANCH-99</td><td class=''>store_id &#x27;BRANCH-99&#x27; must match pattern STORE-&lt;DIGITS&gt;; product_sku &#x27;&#x27; must match SKU-&lt;ALPHANUMERIC&gt;</td></tr></tbody></table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header">
+      <span class="badge badge-navy">S3 Object Layout</span>
+      <h2>Generated Data Lake Object Hierarchy</h2>
+    </div>
+    <ul class="s3-list"><li><code>s3://retail-datalake-dev-123456789012/curated/transactions/transaction_date=2026-10-27/retail_transactions_2026_10_28_valid_4a7969491b.csv</code></li><li><code>s3://retail-datalake-dev-123456789012/curated/transactions/transaction_date=2026-10-28/retail_transactions_2026_10_28_valid_4a7969491b.csv</code></li><li><code>s3://retail-datalake-dev-123456789012/curated/transactions/transaction_date=2026-10-29/retail_transactions_2026_10_29_mixed_f7d31a08bd.csv</code></li><li><code>s3://retail-datalake-dev-123456789012/quarantine/transactions/file_errors/ingestion_date=2026-10-30/retail_transactions_2026_10_30_malformed_headers_9bf8c28977_schema_error.json</code></li><li><code>s3://retail-datalake-dev-123456789012/quarantine/transactions/rejected_rows/ingestion_date=2026-10-30/retail_transactions_2026_10_29_mixed_f7d31a08bd_rejected.json</code></li><li><code>s3://retail-datalake-dev-123456789012/raw/transactions/retail_transactions_2026_10_28_valid.csv</code></li><li><code>s3://retail-datalake-dev-123456789012/raw/transactions/retail_transactions_2026_10_29_mixed.csv</code></li><li><code>s3://retail-datalake-dev-123456789012/raw/transactions/retail_transactions_2026_10_30_malformed_headers.csv</code></li></ul>
+  </section>
+
+  <div class="grid-2">
+    <div class='panel sql-card'><div class='panel-header'><span class='badge badge-navy'>Athena Named Query</span><h3>01_daily_store_revenue.sql</h3></div><div class='table-wrap'><table><thead><tr><th>transaction_date</th><th>store_id</th><th>currency</th><th>transaction_count</th><th>total_units_sold</th><th>gross_revenue</th><th>total_discounts</th><th>net_revenue</th><th>avg_transaction_value</th></tr></thead><tbody><tr><td class=''>2026-10-27</td><td class=''>STORE-001</td><td class=''>USD</td><td class='num'>2</td><td class='num'>6</td><td class='num'>283.99</td><td class='num'>20.0</td><td class='num'>263.99</td><td class='num'>132.0</td></tr><tr><td class=''>2026-10-27</td><td class=''>STORE-002</td><td class=''>USD</td><td class='num'>2</td><td class='num'>7</td><td class='num'>160.5</td><td class='num'>7.5</td><td class='num'>153.0</td><td class='num'>76.5</td></tr><tr><td class=''>2026-10-27</td><td class=''>STORE-003</td><td class=''>USD</td><td class='num'>1</td><td class='num'>2</td><td class='num'>158.0</td><td class='num'>15.0</td><td class='num'>143.0</td><td class='num'>143.0</td></tr><tr><td class=''>2026-10-28</td><td class=''>STORE-003</td><td class=''>USD</td><td class='num'>2</td><td class='num'>2</td><td class='num'>598.5</td><td class='num'>65.0</td><td class='num'>533.5</td><td class='num'>266.75</td></tr><tr><td class=''>2026-10-28</td><td class=''>STORE-001</td><td class=''>USD</td><td class='num'>3</td><td class='num'>5</td><td class='num'>419.0</td><td class='num'>18.0</td><td class='num'>401.0</td><td class='num'>133.67</td></tr><tr><td class=''>2026-10-28</td><td class=''>STORE-002</td><td class=''>USD</td><td class='num'>2</td><td class='num'>9</td><td class='num'>93.0</td><td class='num'>6.0</td><td class='num'>87.0</td><td class='num'>43.5</td></tr><tr><td class=''>2026-10-29</td><td class=''>STORE-001</td><td class=''>USD</td><td class='num'>3</td><td class='num'>5</td><td class='num'>430.99</td><td class='num'>42.0</td><td class='num'>388.99</td><td class='num'>129.66</td></tr><tr><td class=''>2026-10-29</td><td class=''>STORE-002</td><td class=''>USD</td><td class='num'>3</td><td class='num'>6</td><td class='num'>284.0</td><td class='num'>18.0</td><td class='num'>266.0</td><td class='num'>88.67</td></tr><tr><td class=''>2026-10-29</td><td class=''>STORE-003</td><td class=''>USD</td><td class='num'>2</td><td class='num'>5</td><td class='num'>194.0</td><td class='num'>9.0</td><td class='num'>185.0</td><td class='num'>92.5</td></tr></tbody></table></div></div><div class='panel sql-card'><div class='panel-header'><span class='badge badge-navy'>Athena Named Query</span><h3>02_category_discount_performance.sql</h3></div><div class='table-wrap'><table><thead><tr><th>category</th><th>transactions</th><th>units_sold</th><th>gross_sales</th><th>discount_total</th><th>net_sales</th><th>effective_discount_rate_pct</th></tr></thead><tbody><tr><td class=''>Electronics</td><td class='num'>5</td><td class='num'>6</td><td class='num'>1255.98</td><td class='num'>94.0</td><td class='num'>1161.98</td><td class='num'>7.48</td></tr><tr><td class=''>Home &amp; Kitchen</td><td class='num'>5</td><td class='num'>7</td><td class='num'>645.5</td><td class='num'>65.0</td><td class='num'>580.5</td><td class='num'>10.07</td></tr><tr><td class=''>Apparel</td><td class='num'>4</td><td class='num'>10</td><td class='num'>444.5</td><td class='num'>30.0</td><td class='num'>414.5</td><td class='num'>6.75</td></tr><tr><td class=''>Personal Care</td><td class='num'>3</td><td class='num'>9</td><td class='num'>180.0</td><td class='num'>11.5</td><td class='num'>168.5</td><td class='num'>6.39</td></tr><tr><td class=''>Grocery</td><td class='num'>3</td><td class='num'>15</td><td class='num'>96.0</td><td class='num'>0.0</td><td class='num'>96.0</td><td class='num'>0.0</td></tr></tbody></table></div></div><div class='panel sql-card'><div class='panel-header'><span class='badge badge-navy'>Athena Named Query</span><h3>03_payment_method_distribution.sql</h3></div><div class='table-wrap'><table><thead><tr><th>payment_method</th><th>currency</th><th>transaction_count</th><th>total_net_volume</th><th>avg_ticket_size</th><th>transaction_share_pct</th></tr></thead><tbody><tr><td class=''>CARD</td><td class=''>USD</td><td class='num'>9</td><td class='num'>1597.48</td><td class='num'>177.5</td><td class='num'>45.0</td></tr><tr><td class=''>MOBILE_PAY</td><td class=''>USD</td><td class='num'>5</td><td class='num'>510.5</td><td class='num'>102.1</td><td class='num'>25.0</td></tr><tr><td class=''>VOUCHER</td><td class=''>USD</td><td class='num'>2</td><td class='num'>172.5</td><td class='num'>86.25</td><td class='num'>10.0</td></tr><tr><td class=''>CASH</td><td class=''>USD</td><td class='num'>4</td><td class='num'>141.0</td><td class='num'>35.25</td><td class='num'>20.0</td></tr></tbody></table></div></div><div class='panel sql-card'><div class='panel-header'><span class='badge badge-navy'>Athena Named Query</span><h3>04_hourly_basket_velocity.sql</h3></div><div class='table-wrap'><table><thead><tr><th>hour_of_day_utc</th><th>transaction_count</th><th>distinct_customers</th><th>total_items</th><th>hourly_net_revenue</th></tr></thead><tbody><tr><td class=''>08</td><td class='num'>2</td><td class='num'>2</td><td class='num'>3</td><td class='num'>422.99</td></tr><tr><td class=''>09</td><td class='num'>3</td><td class='num'>3</td><td class='num'>4</td><td class='num'>498.49</td></tr><tr><td class=''>10</td><td class='num'>1</td><td class='num'>1</td><td class='num'>3</td><td class='num'>98.5</td></tr><tr><td class=''>11</td><td class='num'>3</td><td class='num'>1</td><td class='num'>15</td><td class='num'>96.0</td></tr><tr><td class=''>13</td><td class='num'>2</td><td class='num'>2</td><td class='num'>4</td><td class='num'>226.0</td></tr><tr><td class=''>14</td><td class='num'>1</td><td class='num'>1</td><td class='num'>2</td><td class='num'>143.0</td></tr><tr><td class=''>15</td><td class='num'>2</td><td class='num'>2</td><td class='num'>4</td><td class='num'>473.0</td></tr><tr><td class=''>16</td><td class='num'>1</td><td class='num'>1</td><td class='num'>4</td><td class='num'>54.5</td></tr><tr><td class=''>17</td><td class='num'>2</td><td class='num'>2</td><td class='num'>4</td><td class='num'>210.0</td></tr><tr><td class=''>18</td><td class='num'>1</td><td class='num'>1</td><td class='num'>2</td><td class='num'>54.0</td></tr><tr><td class=''>19</td><td class='num'>2</td><td class='num'>2</td><td class='num'>2</td><td class='num'>145.0</td></tr></tbody></table></div></div><div class='panel sql-card'><div class='panel-header'><span class='badge badge-navy'>Athena Named Query</span><h3>05_ingestion_audit_summary.sql</h3></div><div class='table-wrap'><table><thead><tr><th>source_file</th><th>transaction_date</th><th>first_ingested_at_utc</th><th>last_ingested_at_utc</th><th>curated_row_count</th><th>partition_net_revenue</th></tr></thead><tbody><tr><td class=''>raw/transactions/retail_transactions_2026_10_28_valid.csv</td><td class=''>2026-10-27</td><td class=''>2026-10-30T12:00:00Z</td><td class=''>2026-10-30T12:00:00Z</td><td class='num'>5</td><td class='num'>559.99</td></tr><tr><td class=''>raw/transactions/retail_transactions_2026_10_28_valid.csv</td><td class=''>2026-10-28</td><td class=''>2026-10-30T12:00:00Z</td><td class=''>2026-10-30T12:00:00Z</td><td class='num'>7</td><td class='num'>1021.5</td></tr><tr><td class=''>raw/transactions/retail_transactions_2026_10_29_mixed.csv</td><td class=''>2026-10-29</td><td class=''>2026-10-30T12:00:00Z</td><td class=''>2026-10-30T12:00:00Z</td><td class='num'>8</td><td class='num'>839.99</td></tr></tbody></table></div></div>
+  </div>
+</main>
+</body>
+</html>
